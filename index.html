@@ -1,0 +1,111 @@
+import React, { useState, useEffect } from 'react';
+import { ExternalLink, CheckCircle, Loader2 } from 'lucide-react';
+
+const App = () => {
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showPopup, setShowPopup] = useState(false);
+  const [paymentLink, setPaymentLink] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  // REPLACE THIS with your Deployed Web App URL from api.gs
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxcLXzCBv7XTwGaJlHX7qmJFB08b1r16Tag922WCPOsuIb6M79OnZzUj2R-BMorXUxNjg/exec";
+
+  const handleIframeLoad = () => {
+    // We only trigger the check if we have already marked the first load as complete
+    if (isSubmitted) {
+      checkSubmission();
+    } else {
+      setIsSubmitted(true);
+    }
+  };
+
+  const checkSubmission = async () => {
+    setLoading(true);
+    try {
+      // Small delay to ensure Google Sheets has processed the addon data
+      await new Promise(r => setTimeout(r, 2500));
+      
+      const response = await fetch(SCRIPT_URL);
+      const data = await response.json();
+
+      if (data.wantsToBuy && data.url) {
+        setPaymentLink(data.url);
+        setShowPopup(true);
+      } else {
+        // For 'Not Interested' or errors, we let them stay on the Google thank you page
+        console.log("No payment required for choice: " + data.choice);
+      }
+    } catch (error) {
+      console.error("Verification failed:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#f0ebf8] flex flex-col items-center justify-center p-0 m-0 overflow-hidden">
+      
+      {/* Main Survey Container */}
+      <div className={`w-full h-screen transition-opacity duration-700 ${showPopup ? 'opacity-20 blur-sm' : 'opacity-100'}`}>
+        <iframe
+          id="surveyFrame"
+          src="https://docs.google.com/forms/d/e/1FAIpQLSckvsaPF-fNUYgNwLskfE_bxhqkcVSLGClqpBzv78iFlo5CuQ/viewform?embedded=true"
+          className="w-full h-full border-none"
+          onLoad={handleIframeLoad}
+        />
+      </div>
+
+      {/* Loading State Overlay */}
+      {loading && (
+        <div className="fixed inset-0 bg-white/60 backdrop-blur-sm flex flex-col items-center justify-center z-40">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-600" />
+          <p className="mt-4 font-mono text-[10px] uppercase tracking-[0.3em] text-gray-500">Verifying Selection...</p>
+        </div>
+      )}
+
+      {/* Payment Redirection Modal */}
+      {showPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-6 bg-black/40 backdrop-blur-md">
+          <div className="bg-white max-w-sm w-full p-8 shadow-[20px_20px_0px_rgba(0,0,0,1)] border-4 border-black animate-in zoom-in duration-300">
+            <div className="flex justify-center mb-6">
+              <CheckCircle className="h-12 w-12 text-green-500" />
+            </div>
+            
+            <h2 className="text-2xl font-black uppercase tracking-tighter text-center mb-4">
+              Order Registered
+            </h2>
+            
+            <p className="text-gray-600 text-center text-sm leading-relaxed mb-8">
+              We've saved your research responses. To secure your <span className="font-bold text-black italic">Pre-sale Mystery Box</span>, please proceed to our secure checkout.
+            </p>
+            
+            <a 
+              href={paymentLink}
+              target="_top"
+              className="group flex items-center justify-between w-full bg-black text-white px-6 py-4 font-bold uppercase tracking-widest text-xs hover:bg-indigo-600 transition-all"
+            >
+              Pay via Razorpay
+              <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </a>
+            
+            <button 
+              onClick={() => setShowPopup(false)}
+              className="w-full mt-6 text-[9px] uppercase tracking-widest text-gray-400 hover:text-black hover:underline transition-colors"
+            >
+              Continue without paying
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Aesthetic Branding Footer */}
+      {!showPopup && !loading && (
+        <div className="fixed bottom-4 right-4 opacity-30 pointer-events-none">
+          <p className="font-mono text-[10px] uppercase tracking-tighter">Surprivo System v2.1</p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default App;
