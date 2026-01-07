@@ -257,105 +257,30 @@
                     const rows = results.data;
                     let foundUser = null;
 
-                    for (let i = 1; i < rows.length; i++) {
-                        const row = rows[i];
-                        const trackIdInSheet = (row[COL_TRACK_ID] || "").toString().trim();
-                        const orderStatus = (row[COL_ORDER_STATUS] || "").toString().trim().toLowerCase();
-                        
-                        // Valid if ID matches AND status is created/paid
-                        if (trackIdInSheet === inputId && (orderStatus === "created" || orderStatus === "paid")) {
-                            let stageValue = (row[COL_STAGE_VALUE] || "").toString().trim();
-                            if (!stageValue) stageValue = "1";
+for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const orderIdInSheet = (row[COL_ORDER_ID] || "").toString().trim();
+    const orderStatus = (row[COL_ORDER_STATUS] || "").toString().trim().toLowerCase();
+    
+    // Match Order ID AND check if status is created/paid
+    if (orderIdInSheet === inputId && (orderStatus === "created" || orderStatus === "paid")) {
+        let stageValue = (row[COL_STAGE_VALUE] || "").toString().trim();
+        if (!stageValue) stageValue = "1";
 
-                            const timestamp = row[COL_TIMESTAMP] || "";
-                            
-                            let rawGenre = row[COL_RAW_GENRE] || "Curated";
-                            let cleanGenre = rawGenre.split('-')[0].replace("The", "").replace("Box", "").trim();
+        const timestamp = row[COL_TIMESTAMP] || "";
+        
+        let rawGenre = row[COL_RAW_GENRE] || "Curated";
+        let cleanGenre = rawGenre.split('-')[0].replace("The", "").replace("Box", "").trim();
 
-                            foundUser = {
-                                tracking_id: trackIdInSheet,
-                                name: row[COL_NAME] || "Reader",
-                                phone: row[COL_PHONE] || "---",
-                                expectedDate: row[COL_EXPECTED_DATE] || "March 2026",
-                                genre: cleanGenre.toUpperCase(),
-                                orderDate: timestamp.split(' ')[0],
-                                stageNum: parseInt(stageValue)
-                            };
-                            break;
-                        }
-                    }
-
-                    if (foundUser) {
-                        showTracking(foundUser);
-                    } else {
-                        error.classList.remove('hidden');
-                    }
-                },
-                error: function() {
-                    btnLoader.classList.add('hidden');
-                    trackBtn.disabled = false;
-                    error.innerText = "System error. Try again later.";
-                    error.classList.remove('hidden');
-                }
-            });
-        }
-
-        function showTracking(user) {
-            document.getElementById('auth-section').classList.add('hidden');
-            document.getElementById('tracking-content').classList.remove('hidden');
-
-            const firstName = user.name.split(' ')[0];
-            document.getElementById('user-name').innerText = `Hi, ${firstName}`;
-            document.getElementById('order-id-label').innerText = `Order #${user.tracking_id}`;
-            document.getElementById('genre-badge').innerText = `✨ ${user.genre}`;
-            document.getElementById('user-phone').innerText = user.phone;
-            document.getElementById('delivery-date').innerText = user.expectedDate;
-
-            const stageInfo = STAGE_MAP[user.stageNum] || STAGE_MAP["1"];
-            document.getElementById('status-percent').innerText = `${stageInfo.progress}%`;
-            
-            // Animation for bar
-            setTimeout(() => {
-                document.getElementById('progress-bar').style.width = stageInfo.progress + '%';
-            }, 100);
-
-            document.getElementById('hero-emoji').innerText = stageInfo.emoji;
-            document.getElementById('hero-title').innerText = stageInfo.label;
-            document.getElementById('hero-desc').innerText = stageInfo.description;
-
-            // Generate History
-            const tl = document.getElementById('timeline');
-            let timelineHtml = "";
-
-            // Show history from current down to 1
-            for (let s = user.stageNum; s >= 1; s--) {
-                const info = STAGE_MAP[s];
-                const isCurrent = (s === user.stageNum);
-                
-                timelineHtml += `
-                    <div class="timeline-item ${isCurrent ? 'active' : 'completed'}">
-                        <div class="flex justify-between items-start">
-                            <h4 class="font-mono text-xs uppercase tracking-widest font-bold text-ink">
-                                ${info.label}
-                            </h4>
-                            ${isCurrent ? '<span class="text-[8px] font-bold text-gold uppercase tracking-widest bg-gold/5 px-2 py-1">Current</span>' : ''}
-                        </div>
-                        <p class="text-[11px] text-ink/50 mt-1 font-medium italic">${info.description}</p>
-                        ${s === 1 ? `<p class="text-[9px] text-ink/30 mt-2 font-mono uppercase tracking-tighter font-bold">Init: ${user.orderDate}</p>` : ''}
-                    </div>
-                `;
-            }
-
-            tl.innerHTML = timelineHtml;
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function goBack() {
-            document.getElementById('auth-section').classList.remove('hidden');
-            document.getElementById('tracking-content').classList.add('hidden');
-            document.getElementById('orderInput').value = '';
-            document.getElementById('progress-bar').style.width = '0%';
-        }
-    </script>
-</body>
-</html>
+        foundUser = {
+            order_id: orderIdInSheet,
+            name: row[COL_NAME] || "Reader",
+            phone: row[COL_PHONE] || "---",
+            expectedDate: row[COL_EXPECTED_DATE] || "March 2026",
+            genre: cleanGenre.toUpperCase(),
+            orderDate: timestamp.split(' ')[0],
+            stageNum: parseInt(stageValue)
+        };
+        break;
+    }
+}
